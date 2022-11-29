@@ -4,57 +4,51 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
+import com.example.myapplication.databinding.ListBinding
 
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.list)
+        val binding = ListBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
         val days = listOf(
-            "Lundi",
-            "Mardi",
-            "Mercredi",
-            "Mardi",
-            "Lundi",
-            "Mardi",
-            "Lundi",
-            "Mardi",
-            "Lundi","Mardi",
-            "Lundi",
-            "Mardi",
-            "Lundi",
-            "Mardi",
-            "Lundi",
-            "Mardi", "Lundi",
-            "Mardi",
-            "Lundi",
-            "Mardi",
-            "Lundi",
-            "Mardi",
-            "Lundi",
-            "Mardi",
-            "Lundi",
-            "Mardi",
+            generateFakeProduct(),
+            generateFakeProduct(),
+            generateFakeProduct(),
+            generateFakeProduct(),
+            generateFakeProduct(),
         )
 
-        findViewById<RecyclerView>(R.id.list).apply {
-            layoutManager = LinearLayoutManager(this@MainActivity,)
-            //layoutManager = GridLayoutManager(this@MainActivity, 2)
-            adapter = ListAdapter(days)
+        binding.list.apply {
+            //layoutManager = LinearLayoutManager(this@MainActivity,)
+            layoutManager = GridLayoutManager(this@MainActivity, 2)
+            adapter = ListAdapter(days, object : OnProductListener {
+                override fun onClicked(product: Product, position: Int) {
+                    Toast.makeText(this@MainActivity, "Product $position clicked", Toast.LENGTH_SHORT).show()
+                }
+
+            })
         }
+
 
     }
 }
 
-class ListAdapter(val days: List<String>) : RecyclerView.Adapter<DayViewHolder>() {
+class ListAdapter(
+    private val products: List<Product>,
+    private val listener: OnProductListener,
+) : RecyclerView.Adapter<DayViewHolder>() {
 
-
-    override fun getItemCount(): Int = days.size
+    override fun getItemCount(): Int = products.size
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): DayViewHolder {
         return DayViewHolder(
@@ -65,9 +59,12 @@ class ListAdapter(val days: List<String>) : RecyclerView.Adapter<DayViewHolder>(
     }
 
     override fun onBindViewHolder(holder: DayViewHolder, position: Int) {
-        holder.updateDay(
-            days[position]
-        )
+        val product = products[position]
+        holder.updateDay(product)
+
+        holder.itemView.setOnClickListener {
+            listener.onClicked(product, position)
+        }
     }
 
 
@@ -75,12 +72,17 @@ class ListAdapter(val days: List<String>) : RecyclerView.Adapter<DayViewHolder>(
 
 class DayViewHolder(v: View) : RecyclerView.ViewHolder(v) {
 
-    private val dayOfWeekTextView = v.findViewById<TextView>(R.id.day_of_week)
+    private val productNameTv = v.findViewById<TextView>(R.id.product_item_name)
+    private val productImage = v.findViewById<ImageView>(R.id.product_item_image)
 
-    fun updateDay(day: String) {
-        dayOfWeekTextView.text = day
+    fun updateDay(product: Product) {
+        productNameTv.text = product.name
+        Glide.with(itemView).load(product.thumbnail).into(productImage)
     }
+}
 
+interface OnProductListener {
+    fun onClicked(product: Product, position: Int)
 }
 
 data class Product(
